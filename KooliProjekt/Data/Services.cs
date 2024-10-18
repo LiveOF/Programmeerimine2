@@ -10,3 +10,4 @@
         public Structure Structure { get; set; }
     }
 }
+ 

@@ -7,3 +7,4 @@
         public ICollection<Structure> Structure { get; set; }
     }
 }
+ 
