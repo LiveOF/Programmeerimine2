@@ -1,5 +1,6 @@
 ﻿using KooliProjekt.Data;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using System.Linq;
 
 public static class SeedData
@@ -44,7 +45,7 @@ public static class SeedData
         {
             Location = "Location 1",
             Date = DateTime.Now,
-            Client = new Client { Id = 1, Name = "Client 1" }, // Пример клиента
+            Client = new Client { Name = "Client 1" }, // Пример клиента
         };
         context.Structure.Add(building1);
 
@@ -85,6 +86,16 @@ public static class SeedData
         context.Services.Add(service1);
 
         // Сохранение изменений в базе данных
-        context.SaveChanges();
+        try
+        {
+            context.SaveChanges();
+        }
+        catch (DbUpdateException ex)
+        {
+            Console.WriteLine(ex.InnerException?.Message);
+            Console.WriteLine(ex.InnerException?.StackTrace);
+            throw; // Перекидываем исключение для дальнейшего анализа
+        }
+
     }
 }
