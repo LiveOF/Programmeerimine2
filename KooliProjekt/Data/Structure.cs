@@ -2,7 +2,7 @@
 {
     public class Structure
     {
-        public long Structure_Id { get; set; }
+        public long Id { get; set; }
         public long Client_Ref { get; set; }
         public DateTime Date { get; set; }
         public string Location { get; set; }

@@ -2,7 +2,7 @@
 {
     public class StructurePanel
     {
-        public long Panel_Id { get; set; }
+        public long Id { get; set; }
         public long Structure_Ref { get; set; }
         public decimal Amount { get; set; }
 
