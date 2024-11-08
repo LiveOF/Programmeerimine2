@@ -19,9 +19,11 @@ namespace KooliProjekt.Controllers
         }
 
         // GET: Structures
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(int page = 1)
         {
-            return View(await _context.Structure.ToListAsync());
+            var data = await _context.Structure.GetPagedAsync(page, 5);
+            return View(data);
+
         }
 
         // GET: Structures/Details/5

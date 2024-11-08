@@ -19,9 +19,11 @@ namespace KooliProjekt.Controllers
         }
 
         // GET: PanelComponents
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(int page = 1)
         {
-            return View(await _context.PanelComponent.ToListAsync());
+            var data = await _context.PanelComponent.GetPagedAsync(page, 5);
+            return View(data);
+
         }
 
         // GET: PanelComponents/Details/5
