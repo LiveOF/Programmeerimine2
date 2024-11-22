@@ -1,29 +1,25 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.EntityFrameworkCore;
+﻿using KooliProjekt.Services;
 using KooliProjekt.Data;
+using Microsoft.AspNetCore.Mvc;
+using System.Threading.Tasks;
 
 namespace KooliProjekt.Controllers
 {
     public class StructuresController : Controller
     {
-        private readonly ApplicationDbContext _context;
+        private readonly IStructureService _structureService;
 
-        public StructuresController(ApplicationDbContext context)
+        // Внедрение сервиса через конструктор
+        public StructuresController(IStructureService structureService)
         {
-            _context = context;
+            _structureService = structureService;
         }
 
         // GET: Structures
         public async Task<IActionResult> Index(int page = 1)
         {
-            var data = await _context.Structure.GetPagedAsync(page, 5);
+            var data = await _structureService.GetPagedAsync(page, 5);  // Используем сервис для пагинации
             return View(data);
-
         }
 
         // GET: Structures/Details/5
@@ -34,8 +30,7 @@ namespace KooliProjekt.Controllers
                 return NotFound();
             }
 
-            var structure = await _context.Structure
-                .FirstOrDefaultAsync(m => m.Id == id);
+            var structure = await _structureService.GetByIdAsync(id.Value);  // Используем сервис
             if (structure == null)
             {
                 return NotFound();
@@ -51,16 +46,13 @@ namespace KooliProjekt.Controllers
         }
 
         // POST: Structures/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("Id,Client_Ref,Date,Location")] Structure structure)
         {
             if (ModelState.IsValid)
             {
-                _context.Add(structure);
-                await _context.SaveChangesAsync();
+                await _structureService.AddAsync(structure);  // Используем сервис для добавления
                 return RedirectToAction(nameof(Index));
             }
             return View(structure);
@@ -74,7 +66,7 @@ namespace KooliProjekt.Controllers
                 return NotFound();
             }
 
-            var structure = await _context.Structure.FindAsync(id);
+            var structure = await _structureService.GetByIdAsync(id.Value);  // Используем сервис
             if (structure == null)
             {
                 return NotFound();
@@ -83,8 +75,6 @@ namespace KooliProjekt.Controllers
         }
 
         // POST: Structures/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(long id, [Bind("Id,Client_Ref,Date,Location")] Structure structure)
@@ -98,12 +88,12 @@ namespace KooliProjekt.Controllers
             {
                 try
                 {
-                    _context.Update(structure);
-                    await _context.SaveChangesAsync();
+                    await _structureService.UpdateAsync(structure);  // Используем сервис для обновления
+                    return RedirectToAction(nameof(Index));
                 }
-                catch (DbUpdateConcurrencyException)
+                catch
                 {
-                    if (!StructureExists(structure.Id))
+                    if (await _structureService.GetByIdAsync(structure.Id) == null)
                     {
                         return NotFound();
                     }
@@ -112,7 +102,6 @@ namespace KooliProjekt.Controllers
                         throw;
                     }
                 }
-                return RedirectToAction(nameof(Index));
             }
             return View(structure);
         }
@@ -125,8 +114,7 @@ namespace KooliProjekt.Controllers
                 return NotFound();
             }
 
-            var structure = await _context.Structure
-                .FirstOrDefaultAsync(m => m.Id == id);
+            var structure = await _structureService.GetByIdAsync(id.Value);  // Используем сервис
             if (structure == null)
             {
                 return NotFound();
@@ -140,19 +128,8 @@ namespace KooliProjekt.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(long id)
         {
-            var structure = await _context.Structure.FindAsync(id);
-            if (structure != null)
-            {
-                _context.Structure.Remove(structure);
-            }
-
-            await _context.SaveChangesAsync();
+            await _structureService.DeleteAsync(id);  // Используем сервис для удаления
             return RedirectToAction(nameof(Index));
-        }
-
-        private bool StructureExists(long id)
-        {
-            return _context.Structure.Any(e => e.Id == id);
         }
     }
 }

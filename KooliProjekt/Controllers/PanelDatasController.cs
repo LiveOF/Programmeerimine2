@@ -1,29 +1,25 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.EntityFrameworkCore;
+﻿using KooliProjekt.Services;
 using KooliProjekt.Data;
+using Microsoft.AspNetCore.Mvc;
+using System.Threading.Tasks;
 
 namespace KooliProjekt.Controllers
 {
     public class PanelDatasController : Controller
     {
-        private readonly ApplicationDbContext _context;
+        private readonly IPanelDataService _panelDataService;
 
-        public PanelDatasController(ApplicationDbContext context)
+        // Внедрение сервиса через конструктор
+        public PanelDatasController(IPanelDataService panelDataService)
         {
-            _context = context;
+            _panelDataService = panelDataService;
         }
 
         // GET: PanelDatas
         public async Task<IActionResult> Index(int page = 1)
         {
-            var data = await _context.PanelData.GetPagedAsync(page, 5);
+            var data = await _panelDataService.GetPagedAsync(page, 5);  // Используем сервис для пагинации
             return View(data);
-
         }
 
         // GET: PanelDatas/Details/5
@@ -34,8 +30,7 @@ namespace KooliProjekt.Controllers
                 return NotFound();
             }
 
-            var panelData = await _context.PanelData
-                .FirstOrDefaultAsync(m => m.Id == id);
+            var panelData = await _panelDataService.GetByIdAsync(id.Value);  // Используем сервис
             if (panelData == null)
             {
                 return NotFound();
@@ -51,16 +46,13 @@ namespace KooliProjekt.Controllers
         }
 
         // POST: PanelDatas/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("Id,Dimensions,UnitPrice,TotalPrice")] PanelData panelData)
         {
             if (ModelState.IsValid)
             {
-                _context.Add(panelData);
-                await _context.SaveChangesAsync();
+                await _panelDataService.AddAsync(panelData);  // Используем сервис для добавления
                 return RedirectToAction(nameof(Index));
             }
             return View(panelData);
@@ -74,7 +66,7 @@ namespace KooliProjekt.Controllers
                 return NotFound();
             }
 
-            var panelData = await _context.PanelData.FindAsync(id);
+            var panelData = await _panelDataService.GetByIdAsync(id.Value);  // Используем сервис
             if (panelData == null)
             {
                 return NotFound();
@@ -83,8 +75,6 @@ namespace KooliProjekt.Controllers
         }
 
         // POST: PanelDatas/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(long id, [Bind("Id,Dimensions,UnitPrice,TotalPrice")] PanelData panelData)
@@ -98,12 +88,12 @@ namespace KooliProjekt.Controllers
             {
                 try
                 {
-                    _context.Update(panelData);
-                    await _context.SaveChangesAsync();
+                    await _panelDataService.UpdateAsync(panelData);  // Используем сервис для обновления
+                    return RedirectToAction(nameof(Index));
                 }
-                catch (DbUpdateConcurrencyException)
+                catch
                 {
-                    if (!PanelDataExists(panelData.Id))
+                    if (await _panelDataService.GetByIdAsync(panelData.Id) == null)
                     {
                         return NotFound();
                     }
@@ -112,7 +102,6 @@ namespace KooliProjekt.Controllers
                         throw;
                     }
                 }
-                return RedirectToAction(nameof(Index));
             }
             return View(panelData);
         }
@@ -125,8 +114,7 @@ namespace KooliProjekt.Controllers
                 return NotFound();
             }
 
-            var panelData = await _context.PanelData
-                .FirstOrDefaultAsync(m => m.Id == id);
+            var panelData = await _panelDataService.GetByIdAsync(id.Value);  // Используем сервис
             if (panelData == null)
             {
                 return NotFound();
@@ -140,19 +128,8 @@ namespace KooliProjekt.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(long id)
         {
-            var panelData = await _context.PanelData.FindAsync(id);
-            if (panelData != null)
-            {
-                _context.PanelData.Remove(panelData);
-            }
-
-            await _context.SaveChangesAsync();
+            await _panelDataService.DeleteAsync(id);  // Используем сервис для удаления
             return RedirectToAction(nameof(Index));
-        }
-
-        private bool PanelDataExists(long id)
-        {
-            return _context.PanelData.Any(e => e.Id == id);
         }
     }
 }

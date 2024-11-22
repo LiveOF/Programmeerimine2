@@ -1,29 +1,25 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.EntityFrameworkCore;
 using KooliProjekt.Data;
+using KooliProjekt.Services;
 
 namespace KooliProjekt.Controllers
 {
     public class ComponentsController : Controller
     {
-        private readonly ApplicationDbContext _context;
+        private readonly IComponentService _componentService;
 
-        public ComponentsController(ApplicationDbContext context)
+        // Внедрение зависимости через конструктор
+        public ComponentsController(IComponentService componentService)
         {
-            _context = context;
+            _componentService = componentService;
         }
 
         // GET: Components
         public async Task<IActionResult> Index(int page = 1)
         {
-            var data = await _context.Component.GetPagedAsync(page, 5);
+            var data = await _componentService.GetPagedAsync(page, 5);  // Используем сервис для пагинации
             return View(data);
-
         }
 
         // GET: Components/Details/5
@@ -34,8 +30,7 @@ namespace KooliProjekt.Controllers
                 return NotFound();
             }
 
-            var component = await _context.Component
-                .FirstOrDefaultAsync(m => m.Id == id);
+            var component = await _componentService.GetByIdAsync(id.Value);  // Используем сервис
             if (component == null)
             {
                 return NotFound();
@@ -51,16 +46,13 @@ namespace KooliProjekt.Controllers
         }
 
         // POST: Components/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("Id,Name,UnitPrice")] Component component)
         {
             if (ModelState.IsValid)
             {
-                _context.Add(component);
-                await _context.SaveChangesAsync();
+                await _componentService.AddAsync(component);  // Используем сервис
                 return RedirectToAction(nameof(Index));
             }
             return View(component);
@@ -74,7 +66,7 @@ namespace KooliProjekt.Controllers
                 return NotFound();
             }
 
-            var component = await _context.Component.FindAsync(id);
+            var component = await _componentService.GetByIdAsync(id.Value);  // Используем сервис
             if (component == null)
             {
                 return NotFound();
@@ -83,8 +75,6 @@ namespace KooliProjekt.Controllers
         }
 
         // POST: Components/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(long id, [Bind("Id,Name,UnitPrice")] Component component)
@@ -98,12 +88,12 @@ namespace KooliProjekt.Controllers
             {
                 try
                 {
-                    _context.Update(component);
-                    await _context.SaveChangesAsync();
+                    await _componentService.UpdateAsync(component);  // Используем сервис
+                    return RedirectToAction(nameof(Index));
                 }
-                catch (DbUpdateConcurrencyException)
+                catch
                 {
-                    if (!ComponentExists(component.Id))
+                    if (await _componentService.GetByIdAsync(component.Id) == null)
                     {
                         return NotFound();
                     }
@@ -112,7 +102,6 @@ namespace KooliProjekt.Controllers
                         throw;
                     }
                 }
-                return RedirectToAction(nameof(Index));
             }
             return View(component);
         }
@@ -125,8 +114,7 @@ namespace KooliProjekt.Controllers
                 return NotFound();
             }
 
-            var component = await _context.Component
-                .FirstOrDefaultAsync(m => m.Id == id);
+            var component = await _componentService.GetByIdAsync(id.Value);  // Используем сервис
             if (component == null)
             {
                 return NotFound();
@@ -140,19 +128,8 @@ namespace KooliProjekt.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(long id)
         {
-            var component = await _context.Component.FindAsync(id);
-            if (component != null)
-            {
-                _context.Component.Remove(component);
-            }
-
-            await _context.SaveChangesAsync();
+            await _componentService.DeleteAsync(id);  // Используем сервис для удаления
             return RedirectToAction(nameof(Index));
-        }
-
-        private bool ComponentExists(long id)
-        {
-            return _context.Component.Any(e => e.Id == id);
         }
     }
 }

@@ -1,29 +1,25 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.EntityFrameworkCore;
+﻿using KooliProjekt.Services;
 using KooliProjekt.Data;
+using Microsoft.AspNetCore.Mvc;
+using System.Threading.Tasks;
 
 namespace KooliProjekt.Controllers
 {
     public class ServicesController : Controller
     {
-        private readonly ApplicationDbContext _context;
+        private readonly IServiceService _serviceService;
 
-        public ServicesController(ApplicationDbContext context)
+        // Внедрение сервиса через конструктор
+        public ServicesController(IServiceService serviceService)
         {
-            _context = context;
+            _serviceService = serviceService;
         }
 
         // GET: Services
         public async Task<IActionResult> Index(int page = 1)
         {
-            var data = await _context.Services.GetPagedAsync(page, 5);
+            var data = await _serviceService.GetPagedAsync(page, 5);  // Используем сервис для пагинации
             return View(data);
-
         }
 
         // GET: Services/Details/5
@@ -34,8 +30,7 @@ namespace KooliProjekt.Controllers
                 return NotFound();
             }
 
-            var services = await _context.Services
-                .FirstOrDefaultAsync(m => m.Id == id);
+            var services = await _serviceService.GetByIdAsync(id.Value);  // Используем сервис
             if (services == null)
             {
                 return NotFound();
@@ -51,16 +46,13 @@ namespace KooliProjekt.Controllers
         }
 
         // POST: Services/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,Structure_Ref,Price,Name")] Services services)
+        public async Task<IActionResult> Create([Bind("Id,Structure_Ref,Price,Name")] KooliProjekt.Data.Services services)
         {
             if (ModelState.IsValid)
             {
-                _context.Add(services);
-                await _context.SaveChangesAsync();
+                await _serviceService.AddAsync(services);  // Используем сервис для добавления
                 return RedirectToAction(nameof(Index));
             }
             return View(services);
@@ -74,7 +66,7 @@ namespace KooliProjekt.Controllers
                 return NotFound();
             }
 
-            var services = await _context.Services.FindAsync(id);
+            var services = await _serviceService.GetByIdAsync(id.Value);  // Используем сервис
             if (services == null)
             {
                 return NotFound();
@@ -83,11 +75,9 @@ namespace KooliProjekt.Controllers
         }
 
         // POST: Services/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(long id, [Bind("Id,Structure_Ref,Price,Name")] Services services)
+        public async Task<IActionResult> Edit(long id, [Bind("Id,Structure_Ref,Price,Name")] KooliProjekt.Data.Services services)
         {
             if (id != services.Id)
             {
@@ -98,12 +88,12 @@ namespace KooliProjekt.Controllers
             {
                 try
                 {
-                    _context.Update(services);
-                    await _context.SaveChangesAsync();
+                    await _serviceService.UpdateAsync(services);  // Используем сервис для обновления
+                    return RedirectToAction(nameof(Index));
                 }
-                catch (DbUpdateConcurrencyException)
+                catch
                 {
-                    if (!ServicesExists(services.Id))
+                    if (await _serviceService.GetByIdAsync(services.Id) == null)
                     {
                         return NotFound();
                     }
@@ -112,7 +102,6 @@ namespace KooliProjekt.Controllers
                         throw;
                     }
                 }
-                return RedirectToAction(nameof(Index));
             }
             return View(services);
         }
@@ -125,8 +114,7 @@ namespace KooliProjekt.Controllers
                 return NotFound();
             }
 
-            var services = await _context.Services
-                .FirstOrDefaultAsync(m => m.Id == id);
+            var services = await _serviceService.GetByIdAsync(id.Value);  // Используем сервис
             if (services == null)
             {
                 return NotFound();
@@ -140,19 +128,8 @@ namespace KooliProjekt.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(long id)
         {
-            var services = await _context.Services.FindAsync(id);
-            if (services != null)
-            {
-                _context.Services.Remove(services);
-            }
-
-            await _context.SaveChangesAsync();
+            await _serviceService.DeleteAsync(id);  // Используем сервис для удаления
             return RedirectToAction(nameof(Index));
-        }
-
-        private bool ServicesExists(long id)
-        {
-            return _context.Services.Any(e => e.Id == id);
         }
     }
 }

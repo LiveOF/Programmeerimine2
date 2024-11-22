@@ -1,46 +1,35 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using KooliProjekt.Data;
+using KooliProjekt.Services;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-using KooliProjekt.Data;
+using System.Threading.Tasks;
 
 namespace KooliProjekt.Controllers
 {
     public class ClientsController : Controller
     {
-        private readonly ApplicationDbContext _context;
+        private readonly IClientService _clientService;
 
-        public ClientsController(ApplicationDbContext context)
+        public ClientsController(IClientService clientService)
         {
-            _context = context;
+            _clientService = clientService;
         }
 
         // GET: Clients
         public async Task<IActionResult> Index(int page = 1)
         {
-            var data = await _context.Client.GetPagedAsync(page, 5);
-            return View(data);
-
+            var clients = await _clientService.List(page, 5);
+            return View(clients);
         }
 
         // GET: Clients/Details/5
-        public async Task<IActionResult> Details(long? id)
+        public async Task<IActionResult> Details(long id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var client = await _context.Client
-                .FirstOrDefaultAsync(m => m.Id == id);
+            var client = await _clientService.GetByIdAsync(id);
             if (client == null)
             {
                 return NotFound();
             }
-
             return View(client);
         }
 
@@ -50,17 +39,14 @@ namespace KooliProjekt.Controllers
             return View();
         }
 
-        // POST: Clients/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
+        // POST
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id")] Client client)
+        public async Task<IActionResult> Create(Client client)
         {
             if (ModelState.IsValid)
             {
-                _context.Add(client);
-                await _context.SaveChangesAsync();
+                await _clientService.AddAsync(client);
                 return RedirectToAction(nameof(Index));
             }
             return View(client);
@@ -74,7 +60,7 @@ namespace KooliProjekt.Controllers
                 return NotFound();
             }
 
-            var client = await _context.Client.FindAsync(id);
+            var client = await _clientService.GetByIdAsync(id.Value);
             if (client == null)
             {
                 return NotFound();
@@ -82,12 +68,10 @@ namespace KooliProjekt.Controllers
             return View(client);
         }
 
-        // POST: Clients/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
+        // POST
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(long id, [Bind("Id")] Client client)
+        public async Task<IActionResult> Edit(long id, Client client)
         {
             if (id != client.Id)
             {
@@ -98,12 +82,12 @@ namespace KooliProjekt.Controllers
             {
                 try
                 {
-                    _context.Update(client);
-                    await _context.SaveChangesAsync();
+                    await _clientService.UpdateAsync(client);
+                    return RedirectToAction(nameof(Index));
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!ClientExists(client.Id))
+                    if (await _clientService.GetByIdAsync(client.Id) == null)
                     {
                         return NotFound();
                     }
@@ -112,7 +96,6 @@ namespace KooliProjekt.Controllers
                         throw;
                     }
                 }
-                return RedirectToAction(nameof(Index));
             }
             return View(client);
         }
@@ -125,34 +108,25 @@ namespace KooliProjekt.Controllers
                 return NotFound();
             }
 
-            var client = await _context.Client
-                .FirstOrDefaultAsync(m => m.Id == id);
+            var client = await _clientService.GetByIdAsync(id.Value);
             if (client == null)
             {
                 return NotFound();
             }
 
-            return View(client);
+            return View(client);  // Возвращаем представление для подтверждения удаления
         }
 
         // POST: Clients/Delete/5
-        [HttpPost, ActionName("Delete")]
+        [HttpPost, ActionName("Delete")]  // POST запрос, и действие называется Delete
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(long id)
         {
-            var client = await _context.Client.FindAsync(id);
-            if (client != null)
-            {
-                _context.Client.Remove(client);
-            }
+            // Вызываем метод сервиса для удаления клиента и всех связанных с ним данных
+            await _clientService.DeleteClientAndRelatedStructuresAsync(id);
 
-            await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(Index));
-        }
-
-        private bool ClientExists(long id)
-        {
-            return _context.Client.Any(e => e.Id == id);
+            // Перенаправляем на страницу списка клиентов после успешного удаления
+            return RedirectToAction(nameof(Index));  // Перенаправляем на метод Index
         }
     }
 }

@@ -1,29 +1,25 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.EntityFrameworkCore;
+﻿using KooliProjekt.Services;
 using KooliProjekt.Data;
+using Microsoft.AspNetCore.Mvc;
+using System.Threading.Tasks;
 
 namespace KooliProjekt.Controllers
 {
     public class StructurePanelsController : Controller
     {
-        private readonly ApplicationDbContext _context;
+        private readonly IStructurePanelService _structurePanelService;
 
-        public StructurePanelsController(ApplicationDbContext context)
+        // Внедрение сервиса через конструктор
+        public StructurePanelsController(IStructurePanelService structurePanelService)
         {
-            _context = context;
+            _structurePanelService = structurePanelService;
         }
 
         // GET: StructurePanels
         public async Task<IActionResult> Index(int page = 1)
         {
-            var data = await _context.StructurePanel.GetPagedAsync(page, 5);
+            var data = await _structurePanelService.GetPagedAsync(page, 5);  // Используем сервис для пагинации
             return View(data);
-
         }
 
         // GET: StructurePanels/Details/5
@@ -34,8 +30,7 @@ namespace KooliProjekt.Controllers
                 return NotFound();
             }
 
-            var structurePanel = await _context.StructurePanel
-                .FirstOrDefaultAsync(m => m.Id == id);
+            var structurePanel = await _structurePanelService.GetByIdAsync(id.Value);  // Используем сервис
             if (structurePanel == null)
             {
                 return NotFound();
@@ -51,16 +46,13 @@ namespace KooliProjekt.Controllers
         }
 
         // POST: StructurePanels/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("Id,Structure_Ref,Amount")] StructurePanel structurePanel)
         {
             if (ModelState.IsValid)
             {
-                _context.Add(structurePanel);
-                await _context.SaveChangesAsync();
+                await _structurePanelService.AddAsync(structurePanel);  // Используем сервис для добавления
                 return RedirectToAction(nameof(Index));
             }
             return View(structurePanel);
@@ -74,7 +66,7 @@ namespace KooliProjekt.Controllers
                 return NotFound();
             }
 
-            var structurePanel = await _context.StructurePanel.FindAsync(id);
+            var structurePanel = await _structurePanelService.GetByIdAsync(id.Value);  // Используем сервис
             if (structurePanel == null)
             {
                 return NotFound();
@@ -83,8 +75,6 @@ namespace KooliProjekt.Controllers
         }
 
         // POST: StructurePanels/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(long id, [Bind("Id,Structure_Ref,Amount")] StructurePanel structurePanel)
@@ -98,12 +88,12 @@ namespace KooliProjekt.Controllers
             {
                 try
                 {
-                    _context.Update(structurePanel);
-                    await _context.SaveChangesAsync();
+                    await _structurePanelService.UpdateAsync(structurePanel);  // Используем сервис для обновления
+                    return RedirectToAction(nameof(Index));
                 }
-                catch (DbUpdateConcurrencyException)
+                catch
                 {
-                    if (!StructurePanelExists(structurePanel.Id))
+                    if (await _structurePanelService.GetByIdAsync(structurePanel.Id) == null)
                     {
                         return NotFound();
                     }
@@ -112,7 +102,6 @@ namespace KooliProjekt.Controllers
                         throw;
                     }
                 }
-                return RedirectToAction(nameof(Index));
             }
             return View(structurePanel);
         }
@@ -125,8 +114,7 @@ namespace KooliProjekt.Controllers
                 return NotFound();
             }
 
-            var structurePanel = await _context.StructurePanel
-                .FirstOrDefaultAsync(m => m.Id == id);
+            var structurePanel = await _structurePanelService.GetByIdAsync(id.Value);  // Используем сервис
             if (structurePanel == null)
             {
                 return NotFound();
@@ -140,19 +128,8 @@ namespace KooliProjekt.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(long id)
         {
-            var structurePanel = await _context.StructurePanel.FindAsync(id);
-            if (structurePanel != null)
-            {
-                _context.StructurePanel.Remove(structurePanel);
-            }
-
-            await _context.SaveChangesAsync();
+            await _structurePanelService.DeleteAsync(id);  // Используем сервис для удаления
             return RedirectToAction(nameof(Index));
-        }
-
-        private bool StructurePanelExists(long id)
-        {
-            return _context.StructurePanel.Any(e => e.Id == id);
         }
     }
 }

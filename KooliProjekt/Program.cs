@@ -1,4 +1,5 @@
 ﻿using KooliProjekt.Data;
+using KooliProjekt.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -19,6 +20,15 @@ namespace KooliProjekt
             builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true)
                 .AddEntityFrameworkStores<ApplicationDbContext>();
             builder.Services.AddControllersWithViews();
+            builder.Services.AddScoped<IClientService, ClientService>();
+            builder.Services.AddScoped<IComponentService, ComponentService>();
+            builder.Services.AddScoped<IPanelDataService, PanelDataService>();
+            builder.Services.AddScoped<IStructureService, StructureService>();
+            builder.Services.AddScoped<IServiceService, ServiceService>();
+            builder.Services.AddScoped<IStructurePanelService, StructurePanelService>();
+            builder.Services.AddScoped<IPanelComponentService, PanelComponentService>();
+
+
 
             var app = builder.Build();
 
@@ -56,6 +66,7 @@ namespace KooliProjekt
             app.MapControllerRoute(
                 name: "default",
                 pattern: "{controller=Home}/{action=Index}/{id?}");
+
             app.MapRazorPages();
 
 #if DEBUG
