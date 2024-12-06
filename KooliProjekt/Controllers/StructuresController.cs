@@ -2,6 +2,7 @@
 using KooliProjekt.Data;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
+using KooliProjekt.Models;
 
 namespace KooliProjekt.Controllers
 {
@@ -16,12 +17,14 @@ namespace KooliProjekt.Controllers
         }
 
         // GET: Structures
-        public async Task<IActionResult> Index(int page = 1)
-        {
-            var data = await _structureService.GetPagedAsync(page, 5);  // Используем сервис для пагинации
-            return View(data);
-        }
 
+        public async Task<IActionResult> Index(int page = 1, StructuresIndexModel model = null)
+        {
+            model = model ?? new StructuresIndexModel();
+            model.Data = await _structureService.List(page, 5, model.Search);
+
+            return View(model);
+        }
         // GET: Structures/Details/5
         public async Task<IActionResult> Details(long? id)
         {

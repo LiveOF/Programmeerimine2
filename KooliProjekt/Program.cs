@@ -27,6 +27,7 @@ namespace KooliProjekt
             builder.Services.AddScoped<IServiceService, ServiceService>();
             builder.Services.AddScoped<IStructurePanelService, StructurePanelService>();
             builder.Services.AddScoped<IPanelComponentService, PanelComponentService>();
+            builder.Services.AddScoped<IStructureSearchService, StructureSearchService>();
 
 
 

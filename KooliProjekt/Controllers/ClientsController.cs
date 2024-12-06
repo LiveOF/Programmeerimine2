@@ -1,4 +1,5 @@
 ﻿using KooliProjekt.Data;
+using KooliProjekt.Models;
 using KooliProjekt.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -8,18 +9,20 @@ namespace KooliProjekt.Controllers
 {
     public class ClientsController : Controller
     {
-        private readonly IClientService _clientService;
+        private readonly IClientsService _clientService;
 
-        public ClientsController(IClientService clientService)
+        public ClientsController(IClientsService clientService)
         {
             _clientService = clientService;
         }
 
         // GET: Clients
-        public async Task<IActionResult> Index(int page = 1)
+        public async Task<IActionResult> Index(int page = 1, ClientsIndexModel model = null)
         {
-            var clients = await _clientService.List(page, 5);
-            return View(clients);
+            model = model ?? new ClientsIndexModel();
+            model.Data = await _clientService.List(page, 5, model.Search);
+
+            return View(model);
         }
 
         // GET: Clients/Details/5

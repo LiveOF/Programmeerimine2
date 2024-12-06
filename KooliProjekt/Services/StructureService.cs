@@ -1,4 +1,5 @@
 ﻿using KooliProjekt.Data;
+using KooliProjekt.Search;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,6 +14,21 @@ namespace KooliProjekt.Services
         public StructureService(ApplicationDbContext context)
         {
             _context = context;
+        }
+
+        public async Task<PagedResult<Structure>> List(int page, int pageSize, StructureSearch search)
+        {
+            var query = _context.Structure.AsQueryable();
+
+            search = search ?? new StructureSearch();
+
+            if (!string.IsNullOrWhiteSpace(search.Keyword))
+            {
+                query = query.Where(list => list.Location.Contains(search.Keyword));
+            }
+            return await query
+                .OrderBy(list => list.Location)
+                .GetPagedAsync(page, pageSize);
         }
 
         public async Task<IEnumerable<Structure>> GetAllAsync()
